@@ -38,6 +38,7 @@
     <button onclick="viewAssessments()">📊 Assessments</button>
     <button onclick="viewIncidents()">⚠️ Incidents</button>
     <button onclick="viewAudit()">🕑 Audit</button>
+    <button onclick="viewRiskDistribution()">📈 Risk Distribution</button>
   </div>
 
   <div id="main">
@@ -160,6 +161,24 @@ function viewAudit(){
   });
   html+="</pre>";
   show(html);
+}
+
+function viewRiskDistribution(){
+  let high = suppliers.filter(s=>s.risk_tier==="High").length;
+  let med = suppliers.filter(s=>s.risk_tier==="Medium").length;
+  let low = suppliers.filter(s=>s.risk_tier==="Low").length;
+
+  document.getElementById("output").innerHTML = `<h4>Supplier Risk Distribution</h4><canvas id="riskChart" height="300"></canvas>`;
+  new Chart(document.getElementById("riskChart"), {
+    type: 'pie',
+    data: {
+      labels:["High","Medium","Low"],
+      datasets:[{
+        data:[high, med, low],
+        backgroundColor:["#e74c3c","#e67e22","#27ae60"]
+      }]
+    }
+  });
 }
 
 function show(html){ document.getElementById("output").innerHTML = html; }
