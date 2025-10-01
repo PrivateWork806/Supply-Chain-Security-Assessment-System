@@ -18,10 +18,9 @@
       background: #2c3e50;
       color: white;
       padding: 20px;
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 10px;
-      display: none; /* hidden until login */
     }
     #sidebar h2 { font-size: 18px; margin-bottom: 15px; }
     #sidebar button {
@@ -41,9 +40,8 @@
       flex: 1;
       padding: 20px;
       overflow-y: auto;
-      display: none; /* hidden until login */
+      display: none;
     }
-    h3 { margin-top: 0; }
     .card {
       background: white;
       border-radius: 8px;
@@ -94,7 +92,6 @@
       background: #3498db;
       color: white;
       cursor: pointer;
-      transition: 0.3s;
     }
     #loginScreen button:hover { background: #2980b9; }
     pre {
@@ -183,16 +180,12 @@
       fetch("http://127.0.0.1:5000/assessments")
       .then(res => res.json())
       .then(data => {
-        let labels = [];
-        let scores = [];
-        data.forEach(a=>{
-          labels.push("Supplier "+a.supplier_id);
-          scores.push(a.risk_score);
-        });
+        let labels = data.map(a => "Supplier " + a.supplier_id);
+        let scores = data.map(a => a.risk_score);
 
         document.getElementById("output").innerHTML = `
           <h4>Assessments Chart</h4>
-          <canvas id="assessChart" width="400" height="200"></canvas>
+          <canvas id="assessChart"></canvas>
         `;
 
         new Chart(document.getElementById("assessChart"), {
