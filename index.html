@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8"/>
   <title>Supply Chain Security Assessment System</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #ecf0f3;
+      background: #f4f7f9;
       height: 100vh;
       display: flex;
     }
@@ -50,17 +51,28 @@
       margin-bottom: 20px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    pre {
-      background: #f4f4f4;
-      padding: 10px;
-      border-radius: 6px;
-      overflow-x: auto;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
     }
-    .status-open { color: red; font-weight: bold; }
-    .status-resolved { color: green; font-weight: bold; }
-    .risk-high { color: red; font-weight: bold; }
-    .risk-medium { color: orange; font-weight: bold; }
-    .risk-low { color: green; font-weight: bold; }
+    th, td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th { background: #3498db; color: white; }
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: white;
+      font-size: 12px;
+    }
+    .badge-open { background: red; }
+    .badge-resolved { background: green; }
+    .badge-high { background: red; }
+    .badge-medium { background: orange; }
+    .badge-low { background: green; }
 
     /* Login screen */
     #loginScreen {
@@ -85,6 +97,11 @@
       transition: 0.3s;
     }
     #loginScreen button:hover { background: #2980b9; }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
@@ -100,11 +117,8 @@
   <div id="sidebar">
     <h2>📊 SCSA System</h2>
     <button onclick="viewSuppliers()">📋 View Suppliers</button>
-    <button onclick="addSupplier()">➕ Add Supplier</button>
     <button onclick="viewAssessments()">📊 View Assessments</button>
-    <button onclick="runAssessment()">⚡ Run Assessment</button>
     <button onclick="viewIncidents()">⚠️ View Incidents</button>
-    <button onclick="addIncident()">➕ Log Incident</button>
     <button onclick="viewAudit()">🕑 Audit Log</button>
   </div>
 
@@ -121,128 +135,116 @@
   </div>
 
   <script>
-    // Data
-    let suppliers = [
-      {id:1, name:"Alpha Logistics", industry:"Transport", contact_email:"alpha.logistics@gmail.com", risk_tier:"Medium"},
-      {id:2, name:"Global Foods Ltd", industry:"Retail", contact_email:"globalfoods@gmail.com", risk_tier:"Low"},
-      {id:3, name:"TechSource IT", industry:"Technology", contact_email:"techsourceit@gmail.com", risk_tier:"High"},
-      {id:4, name:"PharmaHealth Supplies", industry:"Healthcare", contact_email:"pharmahealthsupplies@gmail.com", risk_tier:"Medium"},
-      {id:5, name:"AgriFresh Produce", industry:"Agriculture", contact_email:"agrifreshproduce@gmail.com", risk_tier:"Low"}
-    ];
-    let assessments = [
-      {supplier_id:1, risk_score:65, by:"assessor.scsa@gmail.com", date:"2025-09-01"},
-      {supplier_id:3, risk_score:82, by:"assessor.scsa@gmail.com", date:"2025-09-10"},
-      {supplier_id:4, risk_score:48, by:"assessor.scsa@gmail.com", date:"2025-09-20"}
-    ];
-    let incidents = [
-      {id:1, supplier_id:1, description:"Truck breakdown delayed delivery", severity:"Medium", status:"Resolved"},
-      {id:2, supplier_id:3, description:"Cybersecurity breach in supplier system", severity:"High", status:"Open"},
-      {id:3, supplier_id:2, description:"Late supply of goods during holiday", severity:"Low", status:"Resolved"}
-    ];
-    let audit = [
-      {user:"admin.scsa@gmail.com", action:"CREATE_SUPPLIER", time:"09:00", details:"Added Alpha Logistics"},
-      {user:"assessor.scsa@gmail.com", action:"RUN_ASSESSMENT", time:"10:00", details:"Supplier 1 Score 65"},
-      {user:"assessor.scsa@gmail.com", action:"RUN_ASSESSMENT", time:"10:20", details:"Supplier 3 Score 82"},
-      {user:"admin.scsa@gmail.com", action:"CREATE_INCIDENT", time:"11:20", details:"Cybersecurity breach in supplier system"}
-    ];
-    const users = [
-      {email:"admin.scsa@gmail.com", password:"password", role:"Admin"},
-      {email:"assessor.scsa@gmail.com", password:"password", role:"Assessor"},
-      {email:"auditor.scsa@gmail.com", password:"password", role:"Auditor"}
-    ];
     let currentUser = null;
-
-    function logAction(action, details="") {
-      audit.unshift({user: currentUser.email, action, time:new Date().toLocaleTimeString(), details});
-    }
 
     function doLogin() {
       const email = document.getElementById("email").value;
       const pw = document.getElementById("password").value;
-      const u = users.find(x=>x.email===email && x.password===pw);
-      if(u){
-        currentUser=u;
-        logAction("LOGIN");
-        document.getElementById("loginScreen").style.display="none";
-        document.getElementById("sidebar").style.display="flex";
-        document.getElementById("main").style.display="block";
-        document.getElementById("welcome").innerText="✅ Logged in as "+u.role;
-      } else {
-        alert("Invalid login. Try admin.scsa@gmail.com / password");
-      }
-    }
 
-    function addSupplier() {
-      const name=prompt("Supplier name");
-      const ind=prompt("Industry");
-      const mail=prompt("Email");
-      const id = suppliers.length+1;
-      suppliers.push({id,name,industry:ind,contact_email:mail,risk_tier:"Medium"});
-      logAction("CREATE_SUPPLIER",name);
-      show("Supplier added: "+name);
+      fetch("http://127.0.0.1:5000/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({email: email, password: pw})
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.error){
+          alert("Invalid login!");
+        } else {
+          currentUser = data;
+          document.getElementById("loginScreen").style.display="none";
+          document.getElementById("sidebar").style.display="flex";
+          document.getElementById("main").style.display="block";
+          document.getElementById("welcome").innerText="✅ Logged in as "+data.role;
+        }
+      });
     }
 
     function viewSuppliers() {
-      let html = "<h4>Suppliers</h4><ul>";
-      suppliers.forEach(s=>{
-        html += `<li><b>${s.name}</b> (${s.industry}) - Contact: ${s.contact_email} | Tier: <span class="risk-${s.risk_tier.toLowerCase()}">${s.risk_tier}</span></li>`;
+      fetch("http://127.0.0.1:5000/suppliers")
+      .then(res => res.json())
+      .then(data => {
+        let html = `<h4>Suppliers</h4><table><tr><th>ID</th><th>Name</th><th>Industry</th><th>Email</th><th>Risk Tier</th></tr>`;
+        data.forEach(s=>{
+          html += `<tr>
+            <td>${s.id}</td>
+            <td>${s.name}</td>
+            <td>${s.industry}</td>
+            <td>${s.contact_email}</td>
+            <td><span class="badge badge-${s.risk_tier.toLowerCase()}">${s.risk_tier}</span></td>
+          </tr>`;
+        });
+        html+="</table>";
+        show(html);
       });
-      html += "</ul>";
-      show(html);
     }
 
-    function runAssessment() {
-      const sid=prompt("Supplier ID");
-      const supplier = suppliers.find(s=>s.id==sid);
-      if(!supplier){ alert("No such supplier"); return; }
-      let score = 10 + Math.floor(Math.random()*70);
-      assessments.push({supplier_id:sid, risk_score:score, by:currentUser.email, date:new Date().toLocaleDateString()});
-      logAction("RUN_ASSESSMENT","Supplier "+sid+" Score "+score);
-      show(`Risk score for <b>${supplier.name}</b>: <span class="risk-${score>70?"high":score>40?"medium":"low"}">${score}</span>`);
-    }
+    function viewAssessments() {
+      fetch("http://127.0.0.1:5000/assessments")
+      .then(res => res.json())
+      .then(data => {
+        let labels = [];
+        let scores = [];
+        data.forEach(a=>{
+          labels.push("Supplier "+a.supplier_id);
+          scores.push(a.risk_score);
+        });
 
-    function viewAssessments(){
-      let html="<h4>Assessments</h4><ul>";
-      assessments.forEach(a=>{
-        const sup = suppliers.find(s=>s.id==a.supplier_id);
-        let riskClass=a.risk_score>70?"high":a.risk_score>40?"medium":"low";
-        html += `<li>${sup? sup.name:"Unknown"} - Score: <span class="risk-${riskClass}">${a.risk_score}</span> (by ${a.by} on ${a.date})</li>`;
+        document.getElementById("output").innerHTML = `
+          <h4>Assessments Chart</h4>
+          <canvas id="assessChart" width="400" height="200"></canvas>
+        `;
+
+        new Chart(document.getElementById("assessChart"), {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "Risk Score",
+              data: scores,
+              backgroundColor: scores.map(s=> s>70?"red":s>40?"orange":"green")
+            }]
+          },
+          options: {scales: {y:{beginAtZero:true, max:100}}}
+        });
       });
-      html+="</ul>";
-      show(html);
     }
 
-    function addIncident(){
-      const sid=prompt("Supplier ID");
-      const desc=prompt("Description");
-      const sev=prompt("Severity (High/Medium/Low)");
-      const supplier = suppliers.find(s=>s.id==sid);
-      incidents.push({id:incidents.length+1,supplier_id:sid,description:desc,severity:sev,status:"Open"});
-      logAction("CREATE_INCIDENT",desc);
-      show(`Incident logged for <b>${supplier? supplier.name:"Supplier "+sid}</b>: ${desc} (Severity: ${sev})`);
-    }
-
-    function viewIncidents(){
-      let html="<h4>Incidents</h4><ul>";
-      incidents.forEach(i=>{
-        const sup = suppliers.find(s=>s.id==i.supplier_id);
-        html += `<li>${sup? sup.name:"Unknown"}: ${i.description} | Severity: ${i.severity} | Status: <span class="status-${i.status.toLowerCase()}">${i.status}</span></li>`;
+    function viewIncidents() {
+      fetch("http://127.0.0.1:5000/incidents")
+      .then(res => res.json())
+      .then(data => {
+        let html = `<h4>Incidents</h4><table><tr><th>ID</th><th>Supplier</th><th>Description</th><th>Severity</th><th>Status</th></tr>`;
+        data.forEach(i=>{
+          html += `<tr>
+            <td>${i.id}</td>
+            <td>Supplier ${i.supplier_id}</td>
+            <td>${i.description}</td>
+            <td><span class="badge badge-${i.severity.toLowerCase()}">${i.severity}</span></td>
+            <td><span class="badge badge-${i.status.toLowerCase()}">${i.status}</span></td>
+          </tr>`;
+        });
+        html+="</table>";
+        show(html);
       });
-      html+="</ul>";
-      show(html);
     }
 
-    function viewAudit(){
-      let html="<h4>Audit Log</h4><pre>";
-      audit.forEach(a=>{
-        html += `[${a.time}] ${a.user} → ${a.action} (${a.details})\n`;
+    function viewAudit() {
+      fetch("http://127.0.0.1:5000/audit")
+      .then(res => res.json())
+      .then(data => {
+        let html = "<h4>Audit Log</h4><pre>";
+        data.forEach(a=>{
+          html += `[${a.time}] ${a.user} → ${a.action} (${a.details})\n`;
+        });
+        html+="</pre>";
+        show(html);
       });
-      html+="</pre>";
-      show(html);
     }
 
-    function show(html){ document.getElementById("output").innerHTML=html; }
+    function show(html){
+      document.getElementById("output").innerHTML = html;
+    }
   </script>
 </body>
 </html>
-
