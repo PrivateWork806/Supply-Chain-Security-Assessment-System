@@ -2,867 +2,297 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Supply Chain Security Assessment System (SCSA)</title>
-
-  <!-- Chart.js CDN (works in most environments). If blocked, download chart.min.js and serve locally (instructions below). -->
+  <title>Supply Chain Security Assessment System</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
-    /* ---- Layout + theme ---- */
-    :root{
-      --accent:#2d9cdb;
-      --muted:#6b7c93;
-      --card:#ffffff;
-      --bg:#eef3f7;
-      --success:#27ae60;
-      --danger:#e74c3c;
-      --orange:#e67e22;
-      --shadow: 0 6px 18px rgba(15,30,50,0.08);
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #ecf0f3;
+      height: 100vh;
+      display: flex;
     }
-    html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);color:#213547}
-    .app {display:flex;height:100vh;overflow:hidden}
-    /* sidebar */
-    .sidebar {width:260px;background:#172B3A;color:#fff;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
-    .brand {font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px}
-    .nav-btn {background:transparent;border:none;color:#cfe8ff;padding:10px 12px;border-radius:8px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px}
-    .nav-btn:hover{background:#0f3e58}
-    .nav-btn.active{background:var(--accent);color:#fff}
-    .sidebar .small {font-size:12px;color:#9bb5c9}
-    .main {flex:1;padding:22px;overflow:auto}
-    .topbar {display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-    .card {background:var(--card);padding:18px;border-radius:10px;box-shadow:var(--shadow);margin-bottom:16px}
-    .grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-    h2,h3{margin:0 0 8px 0}
-    /* tables */
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid #eef3f6;text-align:left}
-    th{background:linear-gradient(90deg,var(--accent),#1f79b5);color:#fff}
-    .btn {padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
-    .btn.primary{background:var(--accent);color:#fff}
-    .btn.ghost{background:transparent;border:1px solid #cfe8ff;color:var(--muted)}
-    .btn.danger{background:var(--danger);color:#fff}
-    .badge{display:inline-block;padding:6px 10px;border-radius:999px;color:#fff;font-weight:600;font-size:12px}
-    .badge.low{background:var(--success)}
-    .badge.medium{background:var(--orange)}
-    .badge.high{background:var(--danger)}
-    .badge.open{background:#d64545}
-    .badge.resolved{background:#16a085}
-    .row{display:flex;gap:12px;align-items:center}
-    input[type="text"], input[type="email"], input[type="number"], select, textarea {
-      padding:8px 10px;border-radius:8px;border:1px solid #dbe8f2;background:#fff;width:100%;box-sizing:border-box
+    /* Sidebar */
+    #sidebar {
+      width: 240px;
+      background: #2c3e50;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      display: none; /* hidden until login */
     }
-    .muted {color:var(--muted);font-size:13px}
-    .center {text-align:center}
-    .small {font-size:13px;color:var(--muted)}
-    .flex-space{display:flex;justify-content:space-between;align-items:center}
-    .controls {display:flex;gap:8px;align-items:center}
-    .search {width:260px}
-    /* modal */
-    .modal-backdrop {position:fixed;inset:0;background:rgba(2,10,18,0.45);display:flex;align-items:center;justify-content:center;z-index:9999}
-    .modal {width:720px;max-width:95%;background:#fff;padding:18px;border-radius:10px;box-shadow:0 10px 30px rgba(10,20,40,0.2)}
-    label{display:block;margin-bottom:6px;font-weight:600}
-    footer.small-note{font-size:12px;color:#789; margin-top:8px}
-    /* responsive */
-    @media (max-width:900px){
-      .sidebar{display:none}
-      .app {flex-direction:column}
+    #sidebar h2 { font-size: 18px; margin-bottom: 15px; }
+    #sidebar button {
+      background: #34495e;
+      border: none;
+      padding: 10px;
+      color: white;
+      border-radius: 6px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.3s;
     }
+    #sidebar button:hover { background: #1abc9c; }
+
+    /* Main content */
+    #main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: none; /* hidden until login */
+    }
+    h3 { margin-top: 0; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    .status-open { color: red; font-weight: bold; }
+    .status-resolved { color: green; font-weight: bold; }
+    .risk-high { color: red; font-weight: bold; }
+    .risk-medium { color: orange; font-weight: bold; }
+    .risk-low { color: green; font-weight: bold; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    table th {
+      background: #3498db;
+      color: white;
+    }
+
+    /* Login screen */
+    #loginScreen {
+      margin: auto;
+      text-align: center;
+    }
+    #loginScreen input {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 250px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    #loginScreen button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #loginScreen button:hover { background: #2980b9; }
   </style>
 </head>
 <body>
+  <!-- Login Screen -->
+  <div id="loginScreen">
+    <h2>🔐 SCSA Login</h2>
+    <input type="email" id="email" placeholder="Email" value="admin.scsa@gmail.com">
+    <input type="password" id="password" placeholder="Password" value="password">
+    <button onclick="doLogin()">Login</button>
+  </div>
 
-<div class="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <div style="width:42px;height:42px;border-radius:8px;background:linear-gradient(135deg,#1db0ff,#2d9cdb);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800">S</div>
-      <div>
-        SCSA System
-        <div class="small">Supply Chain Security Assessment</div>
-      </div>
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <h2>📊 SCSA System</h2>
+    <button onclick="viewSuppliers()">📋 View Suppliers</button>
+    <button onclick="addSupplier()">➕ Add Supplier</button>
+    <button onclick="removeSupplier()">❌ Remove Supplier</button>
+    <button onclick="viewAssessments()">📊 View Assessments</button>
+    <button onclick="viewRiskDistribution()">📈 Risk Distribution</button>
+    <button onclick="viewIncidents()">⚠️ View Incidents</button>
+    <button onclick="addIncident()">➕ Log Incident</button>
+    <button onclick="viewAudit()">🕑 Audit Log</button>
+    <button onclick="doLogout()">🚪 Logout</button>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div class="card">
+      <h3>Welcome</h3>
+      <p id="welcome">Please log in to continue...</p>
     </div>
-
-    <button class="nav-btn active" data-page="dashboard">🏠 Dashboard</button>
-    <button class="nav-btn" data-page="suppliers">📋 Suppliers</button>
-    <button class="nav-btn" data-page="assessments">📊 Assessments</button>
-    <button class="nav-btn" data-page="incidents">⚠️ Incidents</button>
-    <button class="nav-btn" data-page="audit">🕑 Audit Log</button>
-    <button class="nav-btn" data-page="settings">⚙️ Settings</button>
-
-    <div style="margin-top:auto">
-      <div class="small">Logged in as</div>
-      <div id="sidebar-user" style="font-weight:700;margin-top:6px">guest</div>
-      <div style="margin-top:8px;display:flex;gap:8px">
-        <button class="btn ghost" id="btn-logout">Logout</button>
-        <button class="btn" id="btn-export">Export</button>
-      </div>
-      <div class="small" style="margin-top:10px">Version 1.0 — Demo</div>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="main">
-    <!-- Top area -->
-    <div class="topbar">
-      <div>
-        <h2 id="page-title">Dashboard</h2>
-        <div class="small muted" id="page-sub">Overview & quick stats</div>
-      </div>
-      <div class="row">
-        <input class="search" id="globalSearch" placeholder="Search suppliers, incidents..." />
-        <button class="btn primary" id="quickAddSupplier">+ New Supplier</button>
-      </div>
-    </div>
-
-    <!-- DYNAMIC CONTENT -->
-    <div id="content-area"></div>
-
-  </main>
-</div>
-
-<!-- MODALS -->
-<!-- Add/Edit Supplier Modal -->
-<div id="modal-supplier" style="display:none" class="modal-backdrop" onclick="if(event.target===this) closeModal('modal-supplier')">
-  <div class="modal">
-    <h3 id="ms-title">Add Supplier</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div>
-        <label>Name</label>
-        <input id="ms-name" type="text" />
-      </div>
-      <div>
-        <label>Industry</label>
-        <input id="ms-industry" type="text" />
-      </div>
-      <div>
-        <label>Contact Email</label>
-        <input id="ms-email" type="email" />
-      </div>
-      <div>
-        <label>Risk Tier</label>
-        <select id="ms-risk">
-          <option>Low</option><option>Medium</option><option>High</option>
-        </select>
-      </div>
-    </div>
-    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn ghost" onclick="closeModal('modal-supplier')">Cancel</button>
-      <button class="btn primary" id="ms-save">Save</button>
+    <div class="card">
+      <h3>Output</h3>
+      <div id="output">Nothing yet.</div>
     </div>
   </div>
-</div>
 
-<!-- Add Incident Modal -->
-<div id="modal-incident" style="display:none" class="modal-backdrop" onclick="if(event.target===this) closeModal('modal-incident')">
-  <div class="modal">
-    <h3>Add Incident</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div>
-        <label>Supplier</label>
-        <select id="mi-supplier"></select>
-      </div>
-      <div>
-        <label>Severity</label>
-        <select id="mi-severity"><option>High</option><option>Medium</option><option>Low</option></select>
-      </div>
-      <div style="grid-column:1 / -1">
-        <label>Description</label>
-        <textarea id="mi-desc" rows="3"></textarea>
-      </div>
-    </div>
-    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn ghost" onclick="closeModal('modal-incident')">Cancel</button>
-      <button class="btn primary" id="mi-save">Log Incident</button>
-    </div>
-  </div>
-</div>
+  <script>
+    // Sample Data
+    let suppliers = [
+      {id:1, name:"Alpha Logistics", industry:"Transport", contact_email:"alpha.logistics@gmail.com", phone:"+254700111111", contact_person:"John Doe", risk_tier:"Medium"},
+      {id:2, name:"Global Foods Ltd", industry:"Retail", contact_email:"globalfoods@gmail.com", phone:"+254722222222", contact_person:"Mary Ann", risk_tier:"Low"},
+      {id:3, name:"TechSource IT", industry:"Technology", contact_email:"techsourceit@gmail.com", phone:"+254733333333", contact_person:"Kevin Smith", risk_tier:"High"},
+      {id:4, name:"PharmaHealth Supplies", industry:"Healthcare", contact_email:"pharmahealthsupplies@gmail.com", phone:"+254744444444", contact_person:"Dr. Alice", risk_tier:"Medium"}
+    ];
+    let assessments = [
+      {supplier_id:1, risk_score:65, by:"assessor.scsa@gmail.com", date:"2025-09-01"},
+      {supplier_id:3, risk_score:82, by:"assessor.scsa@gmail.com", date:"2025-09-10"},
+      {supplier_id:4, risk_score:48, by:"assessor.scsa@gmail.com", date:"2025-09-20"}
+    ];
+    let incidents = [
+      {id:1, supplier_id:1, description:"Truck breakdown delayed delivery", severity:"Medium", status:"Resolved"},
+      {id:2, supplier_id:3, description:"Cybersecurity breach in supplier system", severity:"High", status:"Open"},
+      {id:3, supplier_id:2, description:"Late supply of goods during holiday", severity:"Low", status:"Resolved"}
+    ];
+    let audit = [];
 
-<!-- Add Assessment Modal -->
-<div id="modal-assess" style="display:none" class="modal-backdrop" onclick="if(event.target===this) closeModal('modal-assess')">
-  <div class="modal">
-    <h3>Run Assessment</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div>
-        <label>Supplier</label>
-        <select id="ma-supplier"></select>
-      </div>
-      <div>
-        <label>Risk Score (0-100)</label>
-        <input id="ma-score" type="number" min="0" max="100" />
-      </div>
-      <div style="grid-column:1 / -1">
-        <label>Notes (optional)</label>
-        <textarea id="ma-notes" rows="2"></textarea>
-      </div>
-    </div>
-    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn ghost" onclick="closeModal('modal-assess')">Cancel</button>
-      <button class="btn primary" id="ma-save">Save Assessment</button>
-    </div>
-  </div>
-</div>
+    const users = [
+      {email:"admin.scsa@gmail.com", password:"password", role:"Admin"},
+      {email:"assessor.scsa@gmail.com", password:"password", role:"Assessor"},
+      {email:"auditor.scsa@gmail.com", password:"password", role:"Auditor"}
+    ];
+    let currentUser = null;
 
-<script>
-/* --------------- SCSA SPA — front-end only, localStorage persistence --------------- */
-
-/* Storage keys */
-const STORAGE_KEYS = {
-  suppliers: 'scsa_suppliers_v1',
-  incidents: 'scsa_incidents_v1',
-  assessments: 'scsa_assessments_v1',
-  audit: 'scsa_audit_v1',
-  users: 'scsa_users_v1'
-};
-
-/* Default demo data */
-const DEFAULT = {
-  users: [
-    {email:"admin@scsa.com", password:"password", role:"Admin"},
-    {email:"assessor@scsa.com", password:"password", role:"Assessor"},
-    {email:"auditor@scsa.com", password:"password", role:"Auditor"}
-  ],
-  suppliers: [
-    {id:1, name:"Alpha Logistics", industry:"Transport", contact_email:"alpha.logistics@gmail.com", risk_tier:"Medium"},
-    {id:2, name:"Global Foods Ltd", industry:"Retail", contact_email:"globalfoods@gmail.com", risk_tier:"Low"},
-    {id:3, name:"TechSource IT", industry:"Technology", contact_email:"techsourceit@gmail.com", risk_tier:"High"},
-    {id:4, name:"PharmaHealth Supplies", industry:"Healthcare", contact_email:"pharmahealthsupplies@gmail.com", risk_tier:"Medium"},
-    {id:5, name:"AgriFresh Produce", industry:"Agriculture", contact_email:"agrifreshproduce@gmail.com", risk_tier:"Low"}
-  ],
-  assessments: [
-    {supplier_id:1, risk_score:65, by:"assessor@scsa.com", date:"2025-09-01"},
-    {supplier_id:3, risk_score:82, by:"assessor@scsa.com", date:"2025-09-10"},
-    {supplier_id:4, risk_score:48, by:"assessor@scsa.com", date:"2025-09-20"}
-  ],
-  incidents: [
-    {id:1, supplier_id:1, description:"Truck breakdown delayed delivery", severity:"Medium", status:"Resolved", created_at:"2025-09-02"},
-    {id:2, supplier_id:3, description:"Cybersecurity breach in supplier system", severity:"High", status:"Open", created_at:"2025-09-12"}
-  ],
-  audit: [
-    {user:"system", action:"INIT", time:(new Date()).toLocaleString(), details:"Demo data initialized"}
-  ]
-};
-
-/* In-memory current state (mirrors localStorage) */
-let state = {
-  suppliers: [],
-  assessments: [],
-  incidents: [],
-  audit: [],
-  users: []
-};
-
-let currentUser = null;
-
-/* --- Utility / persistence --- */
-function saveState(){
-  localStorage.setItem(STORAGE_KEYS.suppliers, JSON.stringify(state.suppliers));
-  localStorage.setItem(STORAGE_KEYS.assessments, JSON.stringify(state.assessments));
-  localStorage.setItem(STORAGE_KEYS.incidents, JSON.stringify(state.incidents));
-  localStorage.setItem(STORAGE_KEYS.audit, JSON.stringify(state.audit));
-  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(state.users));
-}
-
-function loadState(){
-  try {
-    state.suppliers = JSON.parse(localStorage.getItem(STORAGE_KEYS.suppliers)) || DEFAULT.suppliers.slice();
-    state.assessments = JSON.parse(localStorage.getItem(STORAGE_KEYS.assessments)) || DEFAULT.assessments.slice();
-    state.incidents = JSON.parse(localStorage.getItem(STORAGE_KEYS.incidents)) || DEFAULT.incidents.slice();
-    state.audit = JSON.parse(localStorage.getItem(STORAGE_KEYS.audit)) || DEFAULT.audit.slice();
-    state.users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users)) || DEFAULT.users.slice();
-  } catch(e) {
-    console.error("Failed to load state, resetting to defaults", e);
-    state.suppliers = DEFAULT.suppliers.slice();
-    state.assessments = DEFAULT.assessments.slice();
-    state.incidents = DEFAULT.incidents.slice();
-    state.audit = DEFAULT.audit.slice();
-    state.users = DEFAULT.users.slice();
-    saveState();
-  }
-}
-
-/* Audit helper */
-function auditLog(user, action, details=""){
-  const entry = {user: user || (currentUser && currentUser.email) || "guest", action, time: (new Date()).toLocaleString(), details};
-  state.audit.unshift(entry);
-  saveState();
-}
-
-/* ID helpers */
-function nextSupplierId(){ return state.suppliers.length ? Math.max(...state.suppliers.map(s=>s.id)) + 1 : 1; }
-function nextIncidentId(){ return state.incidents.length ? Math.max(...state.incidents.map(i=>i.id)) + 1 : 1; }
-
-/* Initialize app on load */
-function init(){
-  loadState();
-  attachUIEvents();
-  showPage('dashboard');
-  document.getElementById('sidebar-user').innerText = 'guest';
-  // quick search: live filter
-  document.getElementById('globalSearch').addEventListener('input', (e)=> {
-    const q = e.target.value.trim().toLowerCase();
-    if(!q) return;
-    // simple behavior: if contains "supplier" show suppliers page
-    if(q.includes('supplier') || q.includes('@') || q.length>2){
-      showPage('suppliers');
-      // after content rendered, highlight results
-      setTimeout(()=> {
-        highlightSearch(q);
-      }, 200);
+    function logAction(action, details="") {
+      audit.unshift({user: currentUser.email, action, time:new Date().toLocaleTimeString(), details});
     }
-  });
-}
 
-/* UI navigation */
-function attachUIEvents(){
-  document.querySelectorAll('.nav-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> {
-      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const page = btn.getAttribute('data-page');
-      showPage(page);
-    });
-  });
-
-  document.getElementById('quickAddSupplier').addEventListener('click', ()=> openSupplierModal());
-  document.getElementById('btn-logout').addEventListener('click', ()=> {
-    currentUser=null; document.getElementById('sidebar-user').innerText = 'guest';
-    showLogin();
-  });
-  document.getElementById('btn-export').addEventListener('click', exportJSON);
-  // modal save handlers
-  document.getElementById('ms-save').addEventListener('click', saveSupplierFromModal);
-  document.getElementById('mi-save').addEventListener('click', saveIncidentFromModal);
-  document.getElementById('ma-save').addEventListener('click', saveAssessmentFromModal);
-}
-
-/* Show login screen */
-function showLogin(){
-  document.getElementById('loginScreen').style.display = 'block';
-  document.querySelector('.main').style.display = 'none';
-  document.getElementById('sidebar').style.display = 'none';
-}
-
-/* Page renderer */
-function showPage(page){
-  // hide login if visible
-  document.getElementById('loginScreen').style.display = 'none';
-  document.querySelector('.main').style.display = 'block';
-  document.getElementById('sidebar').style.display = 'flex';
-
-  document.getElementById('page-title').innerText = page[0].toUpperCase()+page.slice(1);
-  let sub = '';
-  switch(page){
-    case 'dashboard': sub='Overview & quick stats'; renderDashboard(); break;
-    case 'suppliers': sub='Manage suppliers (add, edit, remove)'; renderSuppliersPage(); break;
-    case 'assessments': sub='Run and view risk assessments'; renderAssessmentsPage(); break;
-    case 'incidents': sub='Log and track supplier incidents'; renderIncidentsPage(); break;
-    case 'audit': sub='Recent actions and audit log'; renderAuditPage(); break;
-    case 'settings': sub='Export / Import data, reset demo'; renderSettingsPage(); break;
-    default: sub='Overview'; renderDashboard(); break;
-  }
-  document.getElementById('page-sub').innerText = sub;
-}
-
-/* ------------------ DASHBOARD ------------------ */
-function renderDashboard(){
-  const content = document.getElementById('content-area');
-  // compute stats
-  const totalSuppliers = state.suppliers.length;
-  const highCount = state.suppliers.filter(s=>s.risk_tier==='High').length;
-  const medCount = state.suppliers.filter(s=>s.risk_tier==='Medium').length;
-  const lowCount = state.suppliers.filter(s=>s.risk_tier==='Low').length;
-  const openIncidents = state.incidents.filter(i=>i.status==='Open').length;
-  const recentAssessments = state.assessments.slice(-5).reverse();
-
-  content.innerHTML = `
-    <div class="grid">
-      <div class="card">
-        <div class="row flex-space">
-          <div>
-            <div class="small">Total suppliers</div>
-            <h3>${totalSuppliers}</h3>
-          </div>
-          <div class="center">
-            <div class="small">Open incidents</div>
-            <div style="font-weight:800;color:${openIncidents? 'var(--danger)':'#2d9cdb'}">${openIncidents}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="small">Risk distribution</div>
-        <h3>${highCount} High • ${medCount} Medium • ${lowCount} Low</h3>
-        <div id="dashboard-pie" style="height:180px"></div>
-      </div>
-
-      <div class="card">
-        <div class="small">Latest assessments</div>
-        <div id="latest-asses">
-          ${recentAssessments.map(a=>`<div style="padding:6px 0">${getSupplierName(a.supplier_id)} — ${a.risk_score} (${a.date})</div>`).join('')}
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="small">Quick actions</div>
-        <div style="margin-top:8px;display:flex;gap:8px">
-          <button class="btn primary" onclick="openSupplierModal()">Add Supplier</button>
-          <button class="btn" onclick="openAssessModal()">Run Assessment</button>
-          <button class="btn" onclick="openIncidentModal()">Log Incident</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h3>Top risks (by latest assessment)</h3>
-      <canvas id="dashboard-bar" height="120"></canvas>
-    </div>
-  `;
-
-  // draw charts
-  setTimeout(()=> {
-    try {
-      drawRiskPie();
-      drawTopRiskBar();
-    } catch(e){ console.error(e); }
-  }, 120);
-}
-
-/* draw risk pie chart */
-function drawRiskPie(){
-  const ctxContainer = document.getElementById('dashboard-pie');
-  ctxContainer.innerHTML = '<canvas id="pieCanvas"></canvas>';
-  const ctx = document.getElementById('pieCanvas').getContext('2d');
-  const high = state.suppliers.filter(s=>s.risk_tier==='High').length;
-  const med = state.suppliers.filter(s=>s.risk_tier==='Medium').length;
-  const low = state.suppliers.filter(s=>s.risk_tier==='Low').length;
-  new Chart(ctx, {
-    type:'pie',
-    data:{
-      labels:['High','Medium','Low'],
-      datasets:[{data:[high,med,low], backgroundColor:['#e74c3c','#e67e22','#27ae60']}]
-    },
-    options:{plugins:{legend:{position:'bottom'}}}
-  });
-}
-
-/* draw bar of top risk (latest assessment per supplier) */
-function drawTopRiskBar(){
-  const latestBySupplier = {};
-  state.assessments.forEach(a => {
-    latestBySupplier[a.supplier_id] = a; // later ones overwrite earlier ones (we append)
-  });
-  const entries = Object.values(latestBySupplier).sort((a,b)=>b.risk_score-a.risk_score).slice(0,8);
-  const labels = entries.map(e=>getSupplierName(e.supplier_id));
-  const scores = entries.map(e=>e.risk_score);
-  const ctx = document.getElementById('dashboard-bar').getContext('2d');
-  new Chart(ctx, {
-    type:'bar',
-    data:{labels, datasets:[{label:'Risk Score', data:scores, backgroundColor:scores.map(s=> s>70? '#e74c3c': s>40? '#e67e22' : '#27ae60')}]},
-    options:{scales:{y:{beginAtZero:true, max:100}}, plugins:{legend:{display:false}}}
-  });
-}
-
-/* ------------------ SUPPLIERS PAGE ------------------ */
-function renderSuppliersPage(){
-  const content = document.getElementById('content-area');
-  // build html table rows
-  const rows = state.suppliers.map(s=>`
-    <tr>
-      <td>${s.id}</td>
-      <td>${escapeHtml(s.name)}</td>
-      <td>${escapeHtml(s.industry)}</td>
-      <td>${escapeHtml(s.contact_email)}</td>
-      <td><span class="badge ${s.risk_tier.toLowerCase()}">${s.risk_tier}</span></td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn" onclick="openSupplierModal(${s.id})">Edit</button>
-          <button class="btn danger" onclick="deleteSupplier(${s.id})">Delete</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-
-  content.innerHTML = `
-    <div class="card">
-      <div class="flex-space">
-        <div>
-          <h3>Suppliers</h3>
-          <div class="small muted">Manage supplier records</div>
-        </div>
-        <div class="controls">
-          <input id="supplierFilter" placeholder="Filter by name or industry" />
-          <button class="btn primary" onclick="openSupplierModal()">+ Add Supplier</button>
-        </div>
-      </div>
-      <div style="margin-top:12px;overflow:auto">
-        <table>
-          <thead><tr><th>ID</th><th>Name</th><th>Industry</th><th>Contact Email</th><th>Risk Tier</th><th>Actions</th></tr></thead>
-          <tbody id="suppliers-tbody">${rows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-  // attach filter
-  document.getElementById('supplierFilter').addEventListener('input', (e)=>{
-    const q = e.target.value.toLowerCase();
-    const tbody = document.getElementById('suppliers-tbody');
-    tbody.innerHTML = state.suppliers.filter(s=> s.name.toLowerCase().includes(q) || s.industry.toLowerCase().includes(q)).map(s=>`
-      <tr>
-        <td>${s.id}</td>
-        <td>${escapeHtml(s.name)}</td>
-        <td>${escapeHtml(s.industry)}</td>
-        <td>${escapeHtml(s.contact_email)}</td>
-        <td><span class="badge ${s.risk_tier.toLowerCase()}">${s.risk_tier}</span></td>
-        <td>
-          <div style="display:flex;gap:6px">
-            <button class="btn" onclick="openSupplierModal(${s.id})">Edit</button>
-            <button class="btn danger" onclick="deleteSupplier(${s.id})">Delete</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  });
-}
-
-/* Supplier modal open/save/delete */
-let editingSupplierId = null;
-function openSupplierModal(id=null){
-  editingSupplierId = id;
-  document.getElementById('modal-supplier').style.display = 'flex';
-  document.getElementById('ms-title').innerText = id ? 'Edit Supplier' : 'Add Supplier';
-  if(id){
-    const s = state.suppliers.find(x=>x.id===id);
-    document.getElementById('ms-name').value = s.name;
-    document.getElementById('ms-industry').value = s.industry;
-    document.getElementById('ms-email').value = s.contact_email;
-    document.getElementById('ms-risk').value = s.risk_tier;
-  } else {
-    document.getElementById('ms-name').value = '';
-    document.getElementById('ms-industry').value = '';
-    document.getElementById('ms-email').value = '';
-    document.getElementById('ms-risk').value = 'Medium';
-  }
-}
-function closeModal(id){ document.getElementById(id).style.display = 'none'; editingSupplierId = null; }
-
-function saveSupplierFromModal(){
-  const name = document.getElementById('ms-name').value.trim();
-  const industry = document.getElementById('ms-industry').value.trim();
-  const email = document.getElementById('ms-email').value.trim();
-  const risk = document.getElementById('ms-risk').value;
-  if(!name || !industry || !email){ alert('Please fill name, industry and contact email'); return; }
-
-  if(editingSupplierId){
-    const s = state.suppliers.find(x=>x.id===editingSupplierId);
-    s.name = name; s.industry = industry; s.contact_email = email; s.risk_tier = risk;
-    auditLog(currentUser? currentUser.email : 'system', 'EDIT_SUPPLIER', `ID ${s.id} updated`);
-  } else {
-    const newId = nextSupplierId();
-    const rec = {id:newId, name, industry, contact_email: email, risk_tier: risk};
-    state.suppliers.push(rec);
-    auditLog(currentUser? currentUser.email : 'system', 'CREATE_SUPPLIER', `${name}`);
-  }
-  saveState();
-  closeModal('modal-supplier');
-  renderSuppliersPage();
-}
-
-/* delete supplier (confirm) */
-function deleteSupplier(id){
-  if(!confirm('Delete supplier #'+id+'? This will remove its record (assessments/incidents remain).')) return;
-  state.suppliers = state.suppliers.filter(s=>s.id!==id);
-  auditLog(currentUser? currentUser.email : 'system', 'DELETE_SUPPLIER', `ID ${id}`);
-  saveState();
-  renderSuppliersPage();
-}
-
-/* ------------------ ASSESSMENTS PAGE ------------------ */
-function renderAssessmentsPage(){
-  const content = document.getElementById('content-area');
-  const rows = state.assessments.slice().reverse().map((a,idx)=>`
-    <tr>
-      <td>${a.date}</td>
-      <td>${getSupplierName(a.supplier_id)}</td>
-      <td>${a.risk_score}</td>
-      <td>${escapeHtml(a.by)}</td>
-    </tr>
-  `).join('');
-  content.innerHTML = `
-    <div class="card">
-      <div class="flex-space">
-        <div>
-          <h3>Assessments</h3>
-          <div class="small muted">View historical assessments or run a new one</div>
-        </div>
-        <div class="controls">
-          <button class="btn primary" onclick="openAssessModal()">Run Assessment</button>
-          <button class="btn" onclick="renderAssessmentsPage()">Refresh</button>
-        </div>
-      </div>
-      <div style="margin-top:12px">
-        <table>
-          <thead><tr><th>Date</th><th>Supplier</th><th>Risk Score</th><th>By</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-/* open assessment modal and populate suppliers */
-function openAssessModal(){
-  const sel = document.getElementById('ma-supplier');
-  sel.innerHTML = state.suppliers.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-  document.getElementById('ma-score').value = 50;
-  document.getElementById('ma-notes').value = '';
-  document.getElementById('modal-assess').style.display = 'flex';
-}
-
-function saveAssessmentFromModal(){
-  const supplier_id = parseInt(document.getElementById('ma-supplier').value);
-  const score = parseInt(document.getElementById('ma-score').value);
-  const by = (currentUser && currentUser.email) || 'assessor';
-  const rec = {supplier_id, risk_score: score, by, date: (new Date()).toISOString().slice(0,10)};
-  state.assessments.push(rec);
-  auditLog(by, 'RUN_ASSESSMENT', `Supplier ${supplier_id} Score ${score}`);
-  saveState();
-  closeModal('modal-assess');
-  renderAssessmentsPage();
-}
-
-/* ------------------ INCIDENTS PAGE ------------------ */
-function renderIncidentsPage(){
-  const content = document.getElementById('content-area');
-  const rows = state.incidents.slice().reverse().map(i=>`
-    <tr>
-      <td>${i.id}</td>
-      <td>${getSupplierName(i.supplier_id)}</td>
-      <td>${escapeHtml(i.description)}</td>
-      <td><span class="badge ${i.severity.toLowerCase()}">${i.severity}</span></td>
-      <td><span class="badge ${i.status.toLowerCase()==='open' ? 'open':'resolved'}">${i.status}</span></td>
-      <td>
-        <div style="display:flex;gap:6px">
-          ${i.status==='Open' ? `<button class="btn" onclick="resolveIncident(${i.id})">Mark Resolved</button>` : ''}
-          <button class="btn danger" onclick="deleteIncident(${i.id})">Delete</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-
-  content.innerHTML = `
-    <div class="card">
-      <div class="flex-space">
-        <div>
-          <h3>Incidents</h3>
-          <div class="small muted">Track supplier incidents and status</div>
-        </div>
-        <div>
-          <button class="btn primary" onclick="openIncidentModal()">+ Log Incident</button>
-        </div>
-      </div>
-      <div style="margin-top:12px">
-        <table>
-          <thead><tr><th>ID</th><th>Supplier</th><th>Description</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-/* Incident modal helpers */
-function openIncidentModal(){
-  // populate supplier select
-  const sel = document.getElementById('mi-supplier');
-  sel.innerHTML = state.suppliers.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-  document.getElementById('mi-desc').value = '';
-  document.getElementById('mi-severity').value = 'Medium';
-  document.getElementById('modal-incident').style.display = 'flex';
-}
-
-function saveIncidentFromModal(){
-  const supplier_id = parseInt(document.getElementById('mi-supplier').value);
-  const severity = document.getElementById('mi-severity').value;
-  const desc = document.getElementById('mi-desc').value.trim();
-  if(!desc){ alert('Please enter description'); return; }
-  const id = nextIncidentId();
-  const rec = {id, supplier_id, description: desc, severity, status: 'Open', created_at: (new Date()).toISOString()};
-  state.incidents.push(rec);
-  auditLog(currentUser? currentUser.email : 'system', 'CREATE_INCIDENT', `Supplier ${supplier_id}: ${desc}`);
-  saveState();
-  closeModal('modal-incident');
-  renderIncidentsPage();
-}
-
-function resolveIncident(id){
-  const inc = state.incidents.find(i=>i.id===id);
-  if(!inc) return;
-  inc.status = 'Resolved';
-  auditLog(currentUser? currentUser.email : 'system', 'RESOLVE_INCIDENT', `Incident ${id}`);
-  saveState();
-  renderIncidentsPage();
-}
-
-function deleteIncident(id){
-  if(!confirm('Delete incident #'+id+'?')) return;
-  state.incidents = state.incidents.filter(i=>i.id!==id);
-  auditLog(currentUser? currentUser.email : 'system', 'DELETE_INCIDENT', `Incident ${id}`);
-  saveState();
-  renderIncidentsPage();
-}
-
-/* ------------------ AUDIT PAGE ------------------ */
-function renderAuditPage(){
-  const content = document.getElementById('content-area');
-  const rows = state.audit.slice(0,200).map(a=>`<div style="padding:6px 0;border-bottom:1px dashed #eef3f7"><strong>[${a.time}]</strong> ${escapeHtml(a.user)} → <em>${escapeHtml(a.action)}</em> — ${escapeHtml(a.details)}</div>`).join('');
-  content.innerHTML = `<div class="card"><h3>Audit Log</h3><div style="max-height:420px;overflow:auto">${rows}</div></div>`;
-}
-
-/* ------------------ SETTINGS / EXPORT / IMPORT ------------------ */
-function renderSettingsPage(){
-  const content = document.getElementById('content-area');
-  content.innerHTML = `
-    <div class="card">
-      <h3>Settings</h3>
-      <div class="small muted">Export current data or import from JSON (useful for backups)</div>
-      <div style="margin-top:12px;display:flex;gap:8px">
-        <button class="btn primary" onclick="exportJSON()">Export JSON</button>
-        <button class="btn" onclick="importJSONPrompt()">Import JSON</button>
-        <button class="btn danger" onclick="resetDemo()">Reset to Demo Data</button>
-      </div>
-      <footer class="small-note">Export produces a single JSON file containing suppliers, assessments, incidents and audit.</footer>
-    </div>
-  `;
-}
-
-/* Export */
-function exportJSON(){
-  const payload = {
-    suppliers: state.suppliers,
-    assessments: state.assessments,
-    incidents: state.incidents,
-    audit: state.audit,
-    users: state.users,
-    exported_at: (new Date()).toISOString()
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'scsa-export.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* Import prompt */
-function importJSONPrompt(){
-  const input = document.createElement('input'); input.type='file'; input.accept='.json';
-  input.onchange = (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = function(ev){
-      try {
-        const data = JSON.parse(ev.target.result);
-        if(confirm('This will replace current data with imported data. Continue?')){
-          state.suppliers = data.suppliers || [];
-          state.assessments = data.assessments || [];
-          state.incidents = data.incidents || [];
-          state.audit = data.audit || [];
-          state.users = data.users || DEFAULT.users.slice();
-          saveState();
-          alert('Import complete.');
-          showPage('dashboard');
-        }
-      } catch(err){
-        alert('Invalid JSON file.');
+    function doLogin() {
+      const email = document.getElementById("email").value;
+      const pw = document.getElementById("password").value;
+      const u = users.find(x=>x.email===email && x.password===pw);
+      if(u){
+        currentUser=u;
+        logAction("LOGIN","User logged in");
+        document.getElementById("loginScreen").style.display="none";
+        document.getElementById("sidebar").style.display="flex";
+        document.getElementById("main").style.display="block";
+        document.getElementById("welcome").innerText="✅ Logged in as "+u.role;
+      } else {
+        alert("Invalid login. Try admin.scsa@gmail.com / password");
       }
-    };
-    reader.readAsText(f);
-  };
-  input.click();
-}
-
-/* Reset demo */
-function resetDemo(){
-  if(!confirm('Reset demo data? This will overwrite current data.')) return;
-  state.suppliers = DEFAULT.suppliers.slice();
-  state.assessments = DEFAULT.assessments.slice();
-  state.incidents = DEFAULT.incidents.slice();
-  state.audit = DEFAULT.audit.slice();
-  state.users = DEFAULT.users.slice();
-  saveState();
-  auditLog('system','RESET_DEMO','Reset to default demo data');
-  alert('Demo reset.');
-  showPage('dashboard');
-}
-
-/* ------------------ Helpers ------------------ */
-function getSupplierName(id){
-  const s = state.suppliers.find(x=>x.id===id);
-  return s ? s.name : `Supplier ${id}`;
-}
-
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, (c)=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-/* Highlight search results (simple) */
-function highlightSearch(q){
-  if(!q) return;
-  q = q.toLowerCase();
-  document.querySelectorAll('td').forEach(td=>{
-    if(td.innerText.toLowerCase().includes(q)){
-      td.style.background = '#fffbe6';
-    } else {
-      td.style.background = 'transparent';
     }
-  });
-}
 
-/* ------------------ Login (client-side only demo) ------------------ */
-document.addEventListener('keydown', (e)=> {
-  if(e.key==='Escape'){
-    // close all modals
-    ['modal-supplier','modal-incident','modal-assess'].forEach(id=> document.getElementById(id).style.display='none');
-  }
-});
-
-function doLoginUI(){
-  // called by login form (bind later)
-  const email = document.getElementById('login-email').value;
-  const pw = document.getElementById('login-password').value;
-}
-
-/* The login button in top is in login screen above; bind its action: */
-document.addEventListener('DOMContentLoaded', ()=>{
-  // attach login action (the login form in the page)
-  const loginBtn = document.querySelector('#loginScreen button');
-  loginBtn.addEventListener('click', ()=>{
-    const email = document.getElementById('email').value.trim();
-    const pw = document.getElementById('password').value;
-    const user = state.users.find(u=>u.email===email && u.password===pw);
-    if(!user){
-      alert('Invalid credentials. Demo accounts:\nadmin@scsa.com / password\nassessor@scsa.com / password\nauditor@scsa.com / password');
-      return;
+    function doLogout(){
+      logAction("LOGOUT","User logged out");
+      currentUser=null;
+      document.getElementById("loginScreen").style.display="block";
+      document.getElementById("sidebar").style.display="none";
+      document.getElementById("main").style.display="none";
     }
-    currentUser = user;
-    document.getElementById('sidebar-user').innerText = currentUser.email + ' • ' + currentUser.role;
-    auditLog(currentUser.email, 'LOGIN', 'User logged in');
-    // show dashboard
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('sidebar').style.display = 'flex';
-    document.querySelector('.main').style.display = 'block';
-    showPage('dashboard');
-  });
-  // initialize the app
-  init();
-});
 
-/* Save/close modal bindings (already wired earlier) - ensure modals close on overlay click */
-document.getElementById('modal-supplier').addEventListener('click', (e)=>{ if(e.target===document.getElementById('modal-supplier')) document.getElementById('modal-supplier').style.display='none' });
+    function addSupplier() {
+      const name=prompt("Supplier name");
+      const ind=prompt("Industry");
+      const mail=prompt("Email");
+      const phone=prompt("Phone");
+      const contact=prompt("Contact Person");
+      const id = suppliers.length+1;
+      suppliers.push({id,name,industry:ind,contact_email:mail,phone,contact_person:contact,risk_tier:"Medium"});
+      logAction("CREATE_SUPPLIER",name);
+      show("Supplier added: "+name);
+    }
 
-/* Helper open functions to expose for buttons */
-window.openSupplierModal = openSupplierModal;
-window.openIncidentModal = openIncidentModal;
-window.openAssessModal = openAssessModal;
+    function removeSupplier(){
+      const sid=prompt("Enter Supplier ID to remove");
+      const index=suppliers.findIndex(s=>s.id==sid);
+      if(index>=0){
+        const name=suppliers[index].name;
+        suppliers.splice(index,1);
+        logAction("REMOVE_SUPPLIER",name);
+        show("Supplier removed: "+name);
+      } else {
+        alert("Supplier not found");
+      }
+    }
 
-/* ------------------ End of script ------------------ */
-</script>
+    function viewSuppliers() {
+      let html = "<h4>Suppliers</h4><table><tr><th>ID</th><th>Name</th><th>Industry</th><th>Email</th><th>Phone</th><th>Contact</th><th>Tier</th></tr>";
+      suppliers.forEach(s=>{
+        html += `<tr>
+          <td>${s.id}</td><td>${s.name}</td><td>${s.industry}</td>
+          <td>${s.contact_email}</td><td>${s.phone}</td><td>${s.contact_person}</td>
+          <td><span class="risk-${s.risk_tier.toLowerCase()}">${s.risk_tier}</span></td>
+        </tr>`;
+      });
+      html += "</table>";
+      show(html);
+    }
 
+    function viewAssessments(){
+      let html="<h4>Assessments</h4><table><tr><th>Supplier</th><th>Risk Score</th><th>Assessor</th><th>Date</th></tr>";
+      let labels=[], scores=[];
+      assessments.forEach(a=>{
+        const sup = suppliers.find(s=>s.id==a.supplier_id);
+        let riskClass=a.risk_score>70?"high":a.risk_score>40?"medium":"low";
+        html += `<tr><td>${sup? sup.name:"Unknown"}</td><td><span class="risk-${riskClass}">${a.risk_score}</span></td><td>${a.by}</td><td>${a.date}</td></tr>`;
+        labels.push(sup? sup.name:"Unknown");
+        scores.push(a.risk_score);
+      });
+      html+="</table><canvas id='assessChart'></canvas>";
+      show(html);
+      new Chart(document.getElementById("assessChart"), {
+        type:"bar",
+        data:{labels:labels,datasets:[{label:"Risk Score",data:scores,backgroundColor:scores.map(s=>s>70?"red":s>40?"orange":"green")}]},
+        options:{responsive:true,scales:{y:{beginAtZero:true,max:100}}}
+      });
+    }
+
+    function viewRiskDistribution(){
+      let counts={High:0,Medium:0,Low:0};
+      suppliers.forEach(s=>{counts[s.risk_tier]++;});
+      let html="<h4>Risk Distribution</h4><canvas id='pieChart'></canvas>";
+      show(html);
+      new Chart(document.getElementById("pieChart"), {
+        type:"pie",
+        data:{labels:["High","Medium","Low"],datasets:[{data:[counts.High,counts.Medium,counts.Low],backgroundColor:["red","orange","green"]}]}
+      });
+    }
+
+    function addIncident(){
+      const sid=prompt("Supplier ID");
+      const desc=prompt("Description");
+      const sev=prompt("Severity (High/Medium/Low)");
+      const supplier = suppliers.find(s=>s.id==sid);
+      incidents.push({id:incidents.length+1,supplier_id:sid,description:desc,severity:sev,status:"Open"});
+      logAction("CREATE_INCIDENT",desc);
+      show(`Incident logged for <b>${supplier? supplier.name:"Supplier "+sid}</b>: ${desc} (Severity: ${sev})`);
+    }
+
+    function viewIncidents(){
+      let html="<h4>Incidents</h4><table><tr><th>Supplier</th><th>Description</th><th>Severity</th><th>Status</th></tr>";
+      incidents.forEach(i=>{
+        const sup = suppliers.find(s=>s.id==i.supplier_id);
+        html += `<tr><td>${sup? sup.name:"Unknown"}</td><td>${i.description}</td>
+          <td class="risk-${i.severity.toLowerCase()}">${i.severity}</td>
+          <td class="status-${i.status.toLowerCase()}">${i.status}</td></tr>`;
+      });
+      html+="</table>";
+      show(html);
+    }
+
+    function viewAudit(){
+      let html="<h4>Audit Log</h4><pre>";
+      audit.forEach(a=>{
+        html += `[${a.time}] ${a.user} → ${a.action} (${a.details})\n`;
+      });
+      html+="</pre>";
+      show(html);
+    }
+
+    function show(html){ document.getElementById("output").innerHTML=html; }
+  </script>
 </body>
 </html>
