@@ -5,239 +5,164 @@
   <title>Supply Chain Security Assessment System</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background: #f4f7f9;
-      height: 100vh;
-      display: flex;
-    }
-    /* Sidebar */
-    #sidebar {
-      width: 220px;
-      background: #2c3e50;
-      color: white;
-      padding: 20px;
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-    }
-    #sidebar h2 { font-size: 18px; margin-bottom: 15px; }
-    #sidebar button {
-      background: #34495e;
-      border: none;
-      padding: 10px;
-      color: white;
-      border-radius: 6px;
-      text-align: left;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    #sidebar button:hover { background: #1abc9c; }
-
-    /* Main content */
-    #main {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: none;
-    }
-    .card {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      padding: 8px 12px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-    }
-    th { background: #3498db; color: white; }
-    .badge {
-      padding: 4px 8px;
-      border-radius: 6px;
-      color: white;
-      font-size: 12px;
-    }
-    .badge-open { background: red; }
-    .badge-resolved { background: green; }
-    .badge-high { background: red; }
-    .badge-medium { background: orange; }
-    .badge-low { background: green; }
-
-    /* Login screen */
-    #loginScreen {
-      margin: auto;
-      text-align: center;
-    }
-    #loginScreen input {
-      display: block;
-      margin: 10px auto;
-      padding: 10px;
-      width: 250px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    #loginScreen button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      background: #3498db;
-      color: white;
-      cursor: pointer;
-    }
-    #loginScreen button:hover { background: #2980b9; }
-    pre {
-      background: #f4f4f4;
-      padding: 10px;
-      border-radius: 6px;
-    }
+    body { font-family: 'Segoe UI', sans-serif; margin:0; background:#f4f7f9; display:flex; height:100vh; }
+    #sidebar { width:220px; background:#2c3e50; color:white; padding:20px; display:none; flex-direction:column; gap:10px; }
+    #sidebar h2{font-size:18px;margin:0 0 10px 0;}
+    #sidebar button{ background:#34495e; border:none; padding:10px; color:white; border-radius:6px; text-align:left; cursor:pointer;}
+    #sidebar button:hover{background:#1abc9c;}
+    #main{flex:1;padding:20px; overflow:auto; display:none;}
+    .card{ background:white; border-radius:8px; padding:18px; margin-bottom:18px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+    table{ width:100%; border-collapse:collapse; margin-top:8px; }
+    th,td{ padding:8px 10px; border-bottom:1px solid #e6eef6; text-align:left; }
+    th{ background:#3498db; color:white; }
+    .badge{ padding:4px 8px; border-radius:6px; color:white; font-size:12px; }
+    .badge-high{background:#e74c3c;} .badge-medium{background:#e67e22;} .badge-low{background:#27ae60;}
+    .badge-open{background:#c0392b;} .badge-resolved{background:#16a085;}
+    #loginScreen{margin:auto; text-align:center;}
+    #loginScreen input{display:block; margin:10px auto; padding:10px; width:260px; border-radius:6px; border:1px solid #ccc;}
+    #loginScreen button{ padding:10px 18px; border-radius:6px; border:none; background:#3498db; color:white; cursor:pointer;}
+    #loginScreen button:hover{background:#2980b9;}
   </style>
 </head>
 <body>
-  <!-- Login Screen -->
   <div id="loginScreen">
     <h2>🔐 SCSA Login</h2>
-    <input type="email" id="email" placeholder="Email" value="admin.scsa@gmail.com">
-    <input type="password" id="password" placeholder="Password" value="password">
+    <input id="email" type="email" placeholder="Email" value="admin.scsa@gmail.com">
+    <input id="password" type="password" placeholder="Password" value="password">
     <button onclick="doLogin()">Login</button>
   </div>
 
-  <!-- Sidebar -->
   <div id="sidebar">
-    <h2>📊 SCSA System</h2>
-    <button onclick="viewSuppliers()">📋 View Suppliers</button>
-    <button onclick="viewAssessments()">📊 View Assessments</button>
-    <button onclick="viewIncidents()">⚠️ View Incidents</button>
-    <button onclick="viewAudit()">🕑 Audit Log</button>
+    <h2>📊 SCSA</h2>
+    <button onclick="viewSuppliers()">📋 Suppliers</button>
+    <button onclick="viewAssessments()">📊 Assessments</button>
+    <button onclick="viewIncidents()">⚠️ Incidents</button>
+    <button onclick="viewAudit()">🕑 Audit</button>
   </div>
 
-  <!-- Main -->
   <div id="main">
     <div class="card">
-      <h3>Welcome</h3>
-      <p id="welcome">Please log in to continue...</p>
+      <h3 id="welcome">Welcome</h3>
+      <p id="sub">Please log in to see the dashboard.</p>
     </div>
+
     <div class="card">
       <h3>Output</h3>
       <div id="output">Nothing yet.</div>
     </div>
   </div>
 
-  <script>
-    let currentUser = null;
+<script>
+let currentUser = null;
 
-    function doLogin() {
-      const email = document.getElementById("email").value;
-      const pw = document.getElementById("password").value;
+// Sample demo data
+let suppliers = [
+  {id:1, name:"Alpha Logistics", industry:"Transport", contact_email:"alpha.logistics@gmail.com", risk_tier:"Medium"},
+  {id:2, name:"Global Foods Ltd", industry:"Retail", contact_email:"globalfoods@gmail.com", risk_tier:"Low"},
+  {id:3, name:"TechSource IT", industry:"Technology", contact_email:"techsourceit@gmail.com", risk_tier:"High"},
+  {id:4, name:"PharmaHealth Supplies", industry:"Healthcare", contact_email:"pharmahealthsupplies@gmail.com", risk_tier:"Medium"},
+  {id:5, name:"AgriFresh Produce", industry:"Agriculture", contact_email:"agrifreshproduce@gmail.com", risk_tier:"Low"}
+];
+let assessments = [
+  {supplier_id:1, risk_score:65, by:"assessor.scsa@gmail.com", date:"2025-09-01"},
+  {supplier_id:3, risk_score:82, by:"assessor.scsa@gmail.com", date:"2025-09-10"},
+  {supplier_id:4, risk_score:48, by:"assessor.scsa@gmail.com", date:"2025-09-20"}
+];
+let incidents = [
+  {id:1, supplier_id:1, description:"Truck breakdown delayed delivery", severity:"Medium", status:"Resolved"},
+  {id:2, supplier_id:3, description:"Cybersecurity breach in supplier system", severity:"High", status:"Open"},
+  {id:3, supplier_id:2, description:"Late supply of goods during holiday", severity:"Low", status:"Resolved"}
+];
+let audit = [
+  {user:"admin.scsa@gmail.com", action:"CREATE_SUPPLIER", time:"09:00", details:"Added Alpha Logistics"},
+  {user:"assessor.scsa@gmail.com", action:"RUN_ASSESSMENT", time:"10:00", details:"Supplier 1 Score 65"},
+  {user:"assessor.scsa@gmail.com", action:"RUN_ASSESSMENT", time:"10:20", details:"Supplier 3 Score 82"}
+];
+const users = [
+  {email:"admin.scsa@gmail.com", password:"password", role:"Admin"},
+  {email:"assessor.scsa@gmail.com", password:"password", role:"Assessor"},
+  {email:"auditor.scsa@gmail.com", password:"password", role:"Auditor"}
+];
 
-      fetch("http://127.0.0.1:5000/login", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({email: email, password: pw})
-      })
-      .then(res => res.json())
-      .then(data => {
-        if(data.error){
-          alert("Invalid login!");
-        } else {
-          currentUser = data;
-          document.getElementById("loginScreen").style.display="none";
-          document.getElementById("sidebar").style.display="flex";
-          document.getElementById("main").style.display="block";
-          document.getElementById("welcome").innerText="✅ Logged in as "+data.role;
-        }
-      });
-    }
+function doLogin(){
+  const email = document.getElementById("email").value;
+  const pw = document.getElementById("password").value;
+  const u = users.find(x=>x.email===email && x.password===pw);
+  if(u){
+    currentUser=u;
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("sidebar").style.display="flex";
+    document.getElementById("main").style.display="block";
+    document.getElementById("welcome").innerText="✅ Logged in as "+u.role;
+    document.getElementById("sub").innerText="User: "+u.email;
+  } else {
+    alert("Invalid login. Try admin.scsa@gmail.com / password");
+  }
+}
 
-    function viewSuppliers() {
-      fetch("http://127.0.0.1:5000/suppliers")
-      .then(res => res.json())
-      .then(data => {
-        let html = `<h4>Suppliers</h4><table><tr><th>ID</th><th>Name</th><th>Industry</th><th>Email</th><th>Risk Tier</th></tr>`;
-        data.forEach(s=>{
-          html += `<tr>
-            <td>${s.id}</td>
-            <td>${s.name}</td>
-            <td>${s.industry}</td>
-            <td>${s.contact_email}</td>
-            <td><span class="badge badge-${s.risk_tier.toLowerCase()}">${s.risk_tier}</span></td>
-          </tr>`;
-        });
-        html+="</table>";
-        show(html);
-      });
-    }
+function viewSuppliers(){
+  let html = `<h4>Suppliers</h4><table><tr><th>ID</th><th>Name</th><th>Industry</th><th>Email</th><th>Risk</th></tr>`;
+  suppliers.forEach(s=>{
+    html += `<tr>
+      <td>${s.id}</td>
+      <td>${s.name}</td>
+      <td>${s.industry}</td>
+      <td>${s.contact_email}</td>
+      <td><span class="badge badge-${s.risk_tier.toLowerCase()}">${s.risk_tier}</span></td>
+    </tr>`;
+  });
+  html += `</table>`;
+  show(html);
+}
 
-    function viewAssessments() {
-      fetch("http://127.0.0.1:5000/assessments")
-      .then(res => res.json())
-      .then(data => {
-        let labels = data.map(a => "Supplier " + a.supplier_id);
-        let scores = data.map(a => a.risk_score);
+function viewAssessments(){
+  let labels = assessments.map(a=>{
+    let sup = suppliers.find(s=>s.id==a.supplier_id);
+    return sup? sup.name : "Unknown";
+  });
+  let scores = assessments.map(a=>a.risk_score);
 
-        document.getElementById("output").innerHTML = `
-          <h4>Assessments Chart</h4>
-          <canvas id="assessChart"></canvas>
-        `;
+  document.getElementById("output").innerHTML = `<h4>Assessments Chart</h4><canvas id="assessChart" height="300"></canvas>`;
+  new Chart(document.getElementById("assessChart"), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets:[{
+        label:"Risk Score",
+        data:scores,
+        backgroundColor: scores.map(s=> s>70?"#e74c3c": s>40?"#e67e22":"#27ae60")
+      }]
+    },
+    options:{scales:{y:{beginAtZero:true, max:100}}}
+  });
+}
 
-        new Chart(document.getElementById("assessChart"), {
-          type: "bar",
-          data: {
-            labels: labels,
-            datasets: [{
-              label: "Risk Score",
-              data: scores,
-              backgroundColor: scores.map(s=> s>70?"red":s>40?"orange":"green")
-            }]
-          },
-          options: {scales: {y:{beginAtZero:true, max:100}}}
-        });
-      });
-    }
+function viewIncidents(){
+  let html = `<h4>Incidents</h4><table><tr><th>ID</th><th>Supplier</th><th>Description</th><th>Severity</th><th>Status</th></tr>`;
+  incidents.forEach(i=>{
+    const sup = suppliers.find(s=>s.id==i.supplier_id);
+    html += `<tr>
+      <td>${i.id}</td>
+      <td>${sup? sup.name: "Unknown"}</td>
+      <td>${i.description}</td>
+      <td><span class="badge badge-${i.severity.toLowerCase()}">${i.severity}</span></td>
+      <td><span class="badge badge-${i.status.toLowerCase()}">${i.status}</span></td>
+    </tr>`;
+  });
+  html += `</table>`;
+  show(html);
+}
 
-    function viewIncidents() {
-      fetch("http://127.0.0.1:5000/incidents")
-      .then(res => res.json())
-      .then(data => {
-        let html = `<h4>Incidents</h4><table><tr><th>ID</th><th>Supplier</th><th>Description</th><th>Severity</th><th>Status</th></tr>`;
-        data.forEach(i=>{
-          html += `<tr>
-            <td>${i.id}</td>
-            <td>Supplier ${i.supplier_id}</td>
-            <td>${i.description}</td>
-            <td><span class="badge badge-${i.severity.toLowerCase()}">${i.severity}</span></td>
-            <td><span class="badge badge-${i.status.toLowerCase()}">${i.status}</span></td>
-          </tr>`;
-        });
-        html+="</table>";
-        show(html);
-      });
-    }
+function viewAudit(){
+  let html = "<h4>Audit Log</h4><pre>";
+  audit.forEach(a=>{
+    html += `[${a.time}] ${a.user} → ${a.action} (${a.details})\n`;
+  });
+  html+="</pre>";
+  show(html);
+}
 
-    function viewAudit() {
-      fetch("http://127.0.0.1:5000/audit")
-      .then(res => res.json())
-      .then(data => {
-        let html = "<h4>Audit Log</h4><pre>";
-        data.forEach(a=>{
-          html += `[${a.time}] ${a.user} → ${a.action} (${a.details})\n`;
-        });
-        html+="</pre>";
-        show(html);
-      });
-    }
-
-    function show(html){
-      document.getElementById("output").innerHTML = html;
-    }
-  </script>
+function show(html){ document.getElementById("output").innerHTML = html; }
+</script>
 </body>
 </html>
